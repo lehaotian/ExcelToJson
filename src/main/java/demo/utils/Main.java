@@ -10,7 +10,6 @@ public class Main {
     public static void main(String[] args) {
         ReadTxt readTxt = new ReadTxt();
         Map<String, String> property = readTxt.readByProperty(args[0]);
-//        Map<String, String> property = readTxt.readByProperty("config.txt");
         File excelRoot = new File(property.get("inputPath"));
         if (!excelRoot.exists()){
             System.out.println("导入路径不存在");
