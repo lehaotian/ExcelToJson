@@ -1,9 +1,4 @@
 package lht.utils;
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -12,102 +7,118 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * @author lht
  */
 public class ReadExcel {
-    public Map<String,List<List<String>>> readExcel(File file){
-        try {
-            Map<String, List<List<String>>> jsonDataMap = new HashMap<>();
-            if (file.isFile()) {
-                String[] fileName = file.getName().split("\\.");
-                String name = fileName[0];
-                String suffix = fileName[1];
-                if (name.contains("_")) {
-                    String[] excelName = name.split("_");
-                    // 创建输入流，读取Excel
-                    InputStream is = new FileInputStream(file.getAbsolutePath());
-                    // poi提供的Workbook类
-                    Workbook wb = null;
-                    if ("xlsx".equals(suffix)){
-                        wb = new XSSFWorkbook(is);
-                    }else if ("xls".equals(suffix)){
-                        wb = new HSSFWorkbook(is);
-                    }
-                    if (wb!=null){
-                        Map<String, List<List<String>>> stringListMap = readExcel(excelName[1], wb);
-                        if (!stringListMap.isEmpty()) {
-                            jsonDataMap.putAll(stringListMap);
-                        }
-                    }
-                }
-            } else if (file.isDirectory()) {
-                File[] files = file.listFiles();
-                for (File sonFile : files) {
-                    jsonDataMap.putAll(readExcel(sonFile));
-                }
+    public static Map<String, List<List<String>>> jsonDataMap = new HashMap<>();
+
+    /**
+     * 读取file目录下所有的excel表
+     *
+     * @param file excel表根目录
+     * @throws Exception 异常
+     */
+    public static void readFile(File file) throws Exception {
+        if (file.isFile()) {
+            //过滤临时文件
+            if (file.getName().startsWith(Mark.temporary)) {
+                return;
             }
-            return jsonDataMap;
-        }catch (Exception e){
-            System.out.println("读取excel错误"+e.getMessage());
-            return null;
+            String[] fileName = file.getName().split(Mark.point);
+            Workbook workbook = null;
+            //后缀
+            String suffix = fileName[1];
+            //过滤非excel文件
+            if (Mark.xlsx.equals(suffix)) {
+                workbook = new XSSFWorkbook(file);
+            } else if (Mark.xls.equals(suffix)) {
+                workbook = new HSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
+            }
+            if (workbook == null) {
+                return;
+            }
+            String name = fileName[0];
+            //过滤文件名不含_的excel
+            if (!name.contains(Mark.underline)) {
+                return;
+            }
+            String excelName = name.split(Mark.underline)[1];
+            workbook.forEach(sheet -> {
+                String sheetName = sheet.getSheetName();
+                //过滤文件名不含_的sheet
+                if (!sheetName.contains(Mark.underline)) {
+                    return;
+                }
+                String metaName = fileName + Mark.underline + sheetName.split(Mark.underline)[1];
+                readSheet(sheet);
+            });
+        } else if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            if (files == null) {
+                return;
+            }
+            for (File sonFile : files) {
+                readFile(sonFile);
+            }
         }
     }
+
     /**
      * 去读Excel的方法readExcel，该方法的入口参数为一个File对象
-      */
-    public Map<String,List<List<String>>> readExcel(String fileName, Workbook wb){
-        Map<String,List<List<String>>> jsonDataMap = new HashMap<>();
-        // Excel的页签数量
-        int sheetSize = wb.getNumberOfSheets();
-        for (int index = 0; index < sheetSize; index++) {
-            // 每个页签创建一个Sheet对象
-            Sheet sheet = wb.getSheetAt(index);
-            String sheetName = sheet.getSheetName();
-            if (!sheetName.contains("_")){
-                break;
-            }
-            String[] name = sheetName.split("_");
-            String jsonName = fileName+"_"+name[1];
-            // rowNum sheet.getLastCellNum()返回总列数
-            int rowNum = sheet.getRow(0).getLastCellNum();
-            List<List<String>> outerList =  new ArrayList<>();
-            // sheet.getLastRowNum()返回该页的总行数
-            for (int i = 0; i < sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                String id = toString(row.getCell(0));
-                if(id.startsWith("//")){
-                    continue;//注释行
-                }
-                if("".equals(id)){
-                    String filed = toString(row.getCell(1));
-                    if(!"".equals(filed)){
-                        System.out.println("没有id:"+jsonName+(i+1)+"行");
-                    }
-                    continue;//id为空
-                }
-                List<String> innerList = new ArrayList<>();
-                for (int j = 0; j < rowNum; j++) {
-                    Cell cell = row.getCell(j);
-                    innerList.add(j,toString(cell));
-                }
-                outerList.add(i, innerList);
-            }
-            jsonDataMap.put(jsonName,outerList);
+     */
+    public static Meta readSheet(Sheet sheet) {
+        Row firstRow = sheet.getRow(0);
+        int line = firstRow.getLastCellNum();
+        int column = sheet.getLastRowNum();
+        String[][] data;
+        if (Mark.open.equals(firstRow.getCell(1).getStringCellValue())) {
+            data = new String[line][column];
+        } else {
+            data = new String[column][line];
         }
-        return jsonDataMap;
+        for (int i = 0; i < 6; i++) {
+            Row row = sheet.getRow(i);
+        }
+        for (int i = 6; i < sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            String id = toString(row.getCell(0));
+            if ("".equals(id)) {
+                String filed = toString(row.getCell(1));
+                if (!"".equals(filed)) {
+//                    System.out.println("没有id:" + jsonName + (i + 1) + "行");
+                }
+                continue;//id为空
+            }
+            List<String> innerList = new ArrayList<>();
+            for (int j = 0; j < rowNum; j++) {
+                Cell cell = row.getCell(j);
+                innerList.add(j, toString(cell));
+            }
+            outerList.add(i, innerList);
+        }
+//        jsonDataMap.put(jsonName, outerList);
+        return new Meta(,data);
     }
+
     /**
      * 转换数据格式
-      */
-    private String toString(Cell cell) {
+     */
+    private static String toString(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:
                 //字符串类型
                 return cell.getStringCellValue().trim();
             case NUMERIC:
                 //数值类型
-                int num = (int)cell.getNumericCellValue();
+                int num = (int) cell.getNumericCellValue();
                 return String.valueOf(num).trim();
             default:
                 return "";
