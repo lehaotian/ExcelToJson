@@ -1,10 +1,7 @@
 package lht.utils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
@@ -18,7 +15,18 @@ import java.util.Map;
  * @author lht
  */
 public class ReadExcel {
-    public static Map<String, List<List<String>>> jsonDataMap = new HashMap<>();
+    /**
+     * 读取的数据
+     */
+    public static Map<String, Meta> metaMap = new HashMap<>();
+    /**
+     * 当前表名
+     */
+    public static String metaName;
+    /**
+     * 公式计算
+     */
+    public static FormulaEvaluator formulaEvaluator;
 
     /**
      * 读取file目录下所有的excel表
@@ -50,14 +58,15 @@ public class ReadExcel {
             if (!name.contains(Mark.underline)) {
                 return;
             }
-            String excelName = name.split(Mark.underline)[1];
+            String excelName = name.split(Mark.underline)[0];
+            formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
             workbook.forEach(sheet -> {
                 String sheetName = sheet.getSheetName();
                 //过滤文件名不含_的sheet
                 if (!sheetName.contains(Mark.underline)) {
                     return;
                 }
-                String metaName = fileName + Mark.underline + sheetName.split(Mark.underline)[1];
+                metaName = excelName + Mark.underline + sheetName.split(Mark.underline)[0];
                 readSheet(sheet);
             });
         } else if (file.isDirectory()) {
@@ -71,47 +80,63 @@ public class ReadExcel {
         }
     }
 
+    private static final int SIZE = 6;
+
     /**
      * 去读Excel的方法readExcel，该方法的入口参数为一个File对象
      */
-    public static Meta readSheet(Sheet sheet) {
+    public static void readSheet(Sheet sheet) {
+        Meta meta = new Meta();
+        MetaType metaType;
         Row firstRow = sheet.getRow(0);
-        int line = firstRow.getLastCellNum();
-        int column = sheet.getLastRowNum();
-        String[][] data;
-        if (Mark.open.equals(firstRow.getCell(1).getStringCellValue())) {
-            data = new String[line][column];
+        if (Mark.flag.equals(firstRow.getCell(1).getStringCellValue())) {
+            metaType = MetaType.VERTICAL;
+            return;
         } else {
-            data = new String[column][line];
+            metaType = MetaType.ROW;
         }
-        for (int i = 0; i < 6; i++) {
-            Row row = sheet.getRow(i);
-        }
-        for (int i = 6; i < sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            String id = toString(row.getCell(0));
-            if ("".equals(id)) {
-                String filed = toString(row.getCell(1));
-                if (!"".equals(filed)) {
-//                    System.out.println("没有id:" + jsonName + (i + 1) + "行");
-                }
-                continue;//id为空
+        List<Integer> columns = getColumns(firstRow);
+        List<Integer> rows = getRows(sheet);
+        String[][] data = new String[rows.size()][columns.size()];
+        meta.setData(data);
+        for (int i = 0; i < rows.size(); i++) {
+            Row row = sheet.getRow(rows.get(i));
+            for (int j = 0; j < columns.size(); j++) {
+                Cell cell = row.getCell(columns.get(j));
+                String value = readCell(cell);
+                data[i][j] = value;
             }
-            List<String> innerList = new ArrayList<>();
-            for (int j = 0; j < rowNum; j++) {
-                Cell cell = row.getCell(j);
-                innerList.add(j, toString(cell));
-            }
-            outerList.add(i, innerList);
         }
-//        jsonDataMap.put(jsonName, outerList);
-        return new Meta(,data);
+        meta.setMetaType(metaType);
+        List<Field> fields = new ArrayList<>();
+        meta.setFields(fields);
+        metaMap.put(metaName, meta);
+    }
+
+    private static List<Integer> getColumns(Row firstRow) {
+        List<Integer> columns = new ArrayList<>();
+        firstRow.forEach(cell -> {
+            if (Mark.open.equals(readCell(cell))) {
+                columns.add(cell.getColumnIndex());
+            }
+        });
+        return columns;
+    }
+
+    private static List<Integer> getRows(Sheet sheet) {
+        List<Integer> rows = new ArrayList<>();
+        sheet.forEach(row -> {
+            if (!Mark.open.equals(readCell(row.getCell(0)))) {
+                rows.add(row.getRowNum());
+            }
+        });
+        return rows;
     }
 
     /**
-     * 转换数据格式
+     * 读取单元格数据
      */
-    private static String toString(Cell cell) {
+    private static String readCell(Cell cell) {
         switch (cell.getCellType()) {
             case STRING:
                 //字符串类型
@@ -119,9 +144,16 @@ public class ReadExcel {
             case NUMERIC:
                 //数值类型
                 int num = (int) cell.getNumericCellValue();
-                return String.valueOf(num).trim();
+                return String.valueOf(num);
+            case BOOLEAN:
+                //布尔类型
+                boolean booleanCellValue = cell.getBooleanCellValue();
+                return String.valueOf(booleanCellValue);
+            case FORMULA:
+                //公式
+                return readCell(formulaEvaluator.evaluateInCell(cell));
             default:
-                return "";
+                throw new RuntimeException("数据格式错误：" + metaName + cell.getAddress().toString());
         }
     }
 }

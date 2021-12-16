@@ -10,6 +10,16 @@ import java.util.List;
  */
 @Data
 public class Meta {
+    /**
+     * 表类型
+     */
+    private MetaType metaType;
+    /**
+     * 字段列表
+     */
     private List<Field> fields;
+    /**
+     * 数据
+     */
     private String[][] data;
 }

@@ -11,4 +11,5 @@ public class Mark {
     public static String xlsx = "xlsx";
     public static String xls = "xls";
     public static String open = "*";
+    public static String flag = "字段名";
 }

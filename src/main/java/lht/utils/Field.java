@@ -23,7 +23,7 @@ public class Field {
     /**
      * 导出类型
      */
-    private String outputType;
+    private OutputType outputType;
     /**
      * 默认值
      */
