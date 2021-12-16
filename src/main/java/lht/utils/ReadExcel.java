@@ -46,7 +46,7 @@ public class ReadExcel {
             String suffix = fileName[1];
             //过滤非excel文件
             if (Mark.xlsx.equals(suffix)) {
-                workbook = new XSSFWorkbook(file);
+                workbook = new XSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
             } else if (Mark.xls.equals(suffix)) {
                 workbook = new HSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
             }
@@ -91,7 +91,6 @@ public class ReadExcel {
         Row firstRow = sheet.getRow(0);
         if (Mark.flag.equals(firstRow.getCell(1).getStringCellValue())) {
             metaType = MetaType.VERTICAL;
-            return;
         } else {
             metaType = MetaType.ROW;
         }
