@@ -41,24 +41,24 @@ public class ReadExcel {
                 return;
             }
             String[] fileName = file.getName().split(Mark.point);
-            Workbook workbook = null;
-            //后缀
-            String suffix = fileName[1];
-            //过滤非excel文件
-            if (Mark.xlsx.equals(suffix)) {
-                workbook = new XSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
-            } else if (Mark.xls.equals(suffix)) {
-                workbook = new HSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
-            }
-            if (workbook == null) {
-                return;
-            }
             String name = fileName[0];
             //过滤文件名不含_的excel
             if (!name.contains(Mark.underline)) {
                 return;
             }
             String excelName = name.split(Mark.underline)[0];
+            //后缀
+            String suffix = fileName[1];
+            //过滤非excel文件
+            Workbook workbook = null;
+            if (Mark.xlsx.equals(suffix)) {
+                workbook = new XSSFWorkbook(file);
+            } else if (Mark.xls.equals(suffix)) {
+                workbook = new HSSFWorkbook(new FileInputStream(file.getAbsolutePath()));
+            }
+            if (workbook == null) {
+                return;
+            }
             formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
             workbook.forEach(sheet -> {
                 String sheetName = sheet.getSheetName();
