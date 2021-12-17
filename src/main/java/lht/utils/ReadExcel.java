@@ -6,10 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author lht
@@ -87,12 +84,11 @@ public class ReadExcel {
      */
     public static void readSheet(Sheet sheet) {
         Meta meta = new Meta();
-        MetaType metaType;
         Row firstRow = sheet.getRow(0);
         if (Mark.flag.equals(firstRow.getCell(1).getStringCellValue())) {
-            metaType = MetaType.VERTICAL;
+            meta.setMetaType(MetaType.VERTICAL);
         } else {
-            metaType = MetaType.ROW;
+            meta.setMetaType(MetaType.ROW);
         }
         List<Integer> columns = getColumns(firstRow);
         List<Integer> rows = getRows(sheet);
@@ -106,16 +102,40 @@ public class ReadExcel {
                 data[i][j] = value;
             }
         }
-        meta.setMetaType(metaType);
-        List<Field> fields = new ArrayList<>();
-        meta.setFields(fields);
+        meta.setFields(getFields(meta.getMetaType(), columns, rows, sheet));
         metaMap.put(metaName, meta);
+    }
+
+    private static List<Field> getFields(MetaType metaType, List<Integer> columns, List<Integer> rows, Sheet sheet) {
+        List<Field> fields = new ArrayList<>();
+        if (metaType == MetaType.ROW) {
+            for (Integer column : columns) {
+                Field field = new Field();
+                field.setName(readCell(sheet.getRow(1).getCell(column)));
+                field.setDescribe(readCell(sheet.getRow(2).getCell(column)));
+                field.setDataType(readCell(sheet.getRow(3).getCell(column)));
+                field.setOutputType(OutputType.of(readCell(sheet.getRow(4).getCell(column))));
+                field.setDefaultValue(readCell(sheet.getRow(5).getCell(column)));
+                fields.add(field);
+            }
+        } else if (metaType == MetaType.VERTICAL) {
+            for (Integer row : rows) {
+                Field field = new Field();
+                field.setName(readCell(sheet.getRow(row).getCell(1)));
+                field.setDescribe(readCell(sheet.getRow(row).getCell(2)));
+                field.setDataType(readCell(sheet.getRow(row).getCell(3)));
+                field.setOutputType(OutputType.of(readCell(sheet.getRow(row).getCell(4))));
+                field.setDefaultValue(readCell(sheet.getRow(row).getCell(5)));
+                fields.add(field);
+            }
+        }
+        return fields;
     }
 
     private static List<Integer> getColumns(Row firstRow) {
         List<Integer> columns = new ArrayList<>();
         firstRow.forEach(cell -> {
-            if (Mark.open.equals(readCell(cell))) {
+            if (Objects.equals(Mark.open, readCell(cell))) {
                 columns.add(cell.getColumnIndex());
             }
         });
@@ -125,7 +145,8 @@ public class ReadExcel {
     private static List<Integer> getRows(Sheet sheet) {
         List<Integer> rows = new ArrayList<>();
         sheet.forEach(row -> {
-            if (!Mark.open.equals(readCell(row.getCell(0)))) {
+            Cell cell = row.getCell(0);
+            if (Objects.equals(Mark.open, readCell(cell))) {
                 rows.add(row.getRowNum());
             }
         });
@@ -136,6 +157,9 @@ public class ReadExcel {
      * 读取单元格数据
      */
     private static String readCell(Cell cell) {
+        if (cell == null) {
+            return Mark.empty;
+        }
         switch (cell.getCellType()) {
             case STRING:
                 //字符串类型
@@ -152,7 +176,8 @@ public class ReadExcel {
                 //公式
                 return readCell(formulaEvaluator.evaluateInCell(cell));
             default:
-                throw new RuntimeException("数据格式错误：" + metaName + cell.getAddress().toString());
+                System.out.println(metaName + cell.getAddress().toString() + "数据为空");
+                return Mark.empty;
         }
     }
 }
