@@ -77,8 +77,6 @@ public class ReadExcel {
         }
     }
 
-    private static final int SIZE = 6;
-
     /**
      * 去读Excel的方法readExcel，该方法的入口参数为一个File对象
      */
@@ -92,6 +90,7 @@ public class ReadExcel {
         }
         List<Integer> columns = getColumns(firstRow);
         List<Integer> rows = getRows(sheet);
+        meta.setFields(getFields(meta.getMetaType(), columns, rows, sheet));
         String[][] data = new String[rows.size()][columns.size()];
         meta.setData(data);
         for (int i = 0; i < rows.size(); i++) {
@@ -99,24 +98,34 @@ public class ReadExcel {
             for (int j = 0; j < columns.size(); j++) {
                 Cell cell = row.getCell(columns.get(j));
                 String value = readCell(cell);
+                if (Objects.equals(value, Mark.empty)) {
+                    value = meta.getFields().get(j).getDefaultValue();
+                }
                 data[i][j] = value;
             }
         }
-        meta.setFields(getFields(meta.getMetaType(), columns, rows, sheet));
         metaMap.put(metaName, meta);
     }
 
     private static List<Field> getFields(MetaType metaType, List<Integer> columns, List<Integer> rows, Sheet sheet) {
         List<Field> fields = new ArrayList<>();
         if (metaType == MetaType.ROW) {
+            boolean hasPk = false;
             for (Integer column : columns) {
                 Field field = new Field();
                 field.setName(readCell(sheet.getRow(1).getCell(column)));
                 field.setDescribe(readCell(sheet.getRow(2).getCell(column)));
                 field.setDataType(readCell(sheet.getRow(3).getCell(column)));
-                field.setOutputType(OutputType.of(readCell(sheet.getRow(4).getCell(column))));
+                OutputType outputType = OutputType.of(readCell(sheet.getRow(4).getCell(column)));
+                field.setOutputType(outputType);
+                if (outputType == OutputType.PK) {
+                    hasPk = true;
+                }
                 field.setDefaultValue(readCell(sheet.getRow(5).getCell(column)));
                 fields.add(field);
+            }
+            if (!hasPk) {
+                throw new RuntimeException(metaName + "没有pk主键");
             }
         } else if (metaType == MetaType.VERTICAL) {
             for (Integer row : rows) {
@@ -175,9 +184,11 @@ public class ReadExcel {
             case FORMULA:
                 //公式
                 return readCell(formulaEvaluator.evaluateInCell(cell));
-            default:
-                System.out.println(metaName + cell.getAddress().toString() + "数据为空");
+            case _NONE:
+            case BLANK:
                 return Mark.empty;
+            default:
+                throw new RuntimeException(metaName + cell.getAddress().toString() + "数据错误");
         }
     }
 }
