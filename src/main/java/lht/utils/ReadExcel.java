@@ -6,7 +6,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author lht
@@ -15,7 +17,7 @@ public class ReadExcel {
     /**
      * 读取的数据
      */
-    public static Map<String, Meta> metaMap = new HashMap<>();
+    public static List<Meta> metaList = new ArrayList<>();
     /**
      * 当前表名
      */
@@ -82,6 +84,7 @@ public class ReadExcel {
      */
     public static void readSheet(Sheet sheet) {
         Meta meta = new Meta();
+        meta.setMetaName(metaName);
         Row firstRow = sheet.getRow(0);
         if (Mark.flag.equals(firstRow.getCell(1).getStringCellValue())) {
             meta.setMetaType(MetaType.VERTICAL);
@@ -104,7 +107,7 @@ public class ReadExcel {
                 data[i][j] = value;
             }
         }
-        metaMap.put(metaName, meta);
+        metaList.add(meta);
     }
 
     private static List<Field> getFields(MetaType metaType, List<Integer> columns, List<Integer> rows, Sheet sheet) {

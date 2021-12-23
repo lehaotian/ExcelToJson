@@ -11,6 +11,10 @@ import java.util.List;
 @Data
 public class Meta {
     /**
+     * 表名
+     */
+    public String metaName;
+    /**
      * 表类型
      */
     private MetaType metaType;
