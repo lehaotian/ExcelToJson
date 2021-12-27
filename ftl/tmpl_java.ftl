@@ -204,102 +204,6 @@ public class ${entityName} {
             MAP = Collections.unmodifiableMap(dataMap);
         }
     }
-
-<#if sourceFormat == "CSV">
-    /**
-     * Builder
-     */
-    public static final class Builder {
-        <#list properties as prop>
-        <#if prop.list??>
-        @CsvCustomBindByPosition(position = ${prop.column}, converter = ListConverter.class)
-        <#elseif prop.type == "int">
-        @CsvCustomBindByPosition(position = ${prop.column}, converter = IntConverter.class)
-        <#elseif prop.type == "string" || prop.type == "String">
-        @CsvCustomBindByPosition(position = ${prop.column}, converter = StringConverter.class)
-        <#else>
-        @CsvBindByPosition(position = ${prop.column})
-        </#if>
-        private ${prop.type} ${prop.key};
-        </#list>
-
-        private ${entityName} build() {
-            return new ${entityName}(this);
-        }
-
-        /**
-         * 读取游戏配置
-         */
-        public static Iterable<Builder> getBuilders() throws IOException {
-            Path path = Paths.get(JapariBaseConfig.getInstance().getNumericPath(), "${metaName}${fileExtension}");
-            Reader reader = Files.newBufferedReader(path);
-            // 跳过表头
-            return new CsvToBeanBuilder<Builder>(reader).withSkipLines(4).withType(Builder.class).withOrderedResults(true).build();
-        }
-    }
-
-    public static class StringConverter extends AbstractBeanField<Builder> {
-        @Override
-        protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {
-            value = value.trim();
-            value = value.replace("<d>", ",");
-            return value;
-        }
-    }
-
-    public static class IntConverter extends AbstractBeanField<Builder> {
-        @Override
-        protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {
-            value = value.trim();
-            if (value.equals("")) {
-                return 0;
-            }
-            return Integer.parseInt(value);
-        }
-    }
-
-    public static class ListConverter extends AbstractBeanField<Builder> {
-        @Override
-        protected Object convert(String value) throws CsvDataTypeMismatchException, CsvConstraintViolationException {
-            value = value.trim();
-            if (value.equals("")) {
-                return Lists.newArrayList();
-            }
-            String[] items = value.split("<d>");
-            ParameterizedType genericType = (ParameterizedType) getField().getGenericType();
-            Type[] actualTypeArguments = genericType.getActualTypeArguments();
-            if (actualTypeArguments[0] == Integer.class) {
-                List<Integer> list = Lists.newArrayList();
-                for (String s : items) {
-                    list.add(Integer.parseInt(s));
-                }
-                return list;
-            } else if (actualTypeArguments[0] == Long.class) {
-                List<Long> list = Lists.newArrayList();
-                for (String s : items) {
-                    list.add(Long.parseLong(s));
-                }
-                return list;
-            } else if (actualTypeArguments[0] == Float.class) {
-                List<Float> list = Lists.newArrayList();
-                for (String s : items) {
-                    list.add(Float.parseFloat(s));
-                }
-                return list;
-            } else if (actualTypeArguments[0] == Double.class) {
-                List<Double> list = Lists.newArrayList();
-                for (String s : items) {
-                    list.add(Double.parseDouble(s));
-                }
-                return list;
-            } else if (actualTypeArguments[0] == String.class) {
-                return Arrays.asList(items);
-            }
-            Log.META.error("Invalid actualType {}", actualTypeArguments[0]);
-            return null;
-        }
-    }
-<#elseif sourceFormat == "JSON">
     /**
      * Builder
      */
@@ -348,5 +252,4 @@ public class ${entityName} {
             public List<Builder> data;
         }
     }
-</#if>
 }
