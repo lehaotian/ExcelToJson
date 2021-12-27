@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Locale;
 import java.util.Map;
-import java.util.StringJoiner;
 
 public final class Utils {
 
@@ -131,19 +130,6 @@ public final class Utils {
             }
         } catch (Exception e) {
         }
-    }
-
-    /**
-     * 合成完整路径
-     *
-     * @param args 路径目录
-     */
-    public static String appendPath(String... args) {
-        StringJoiner sj = new StringJoiner(File.separator);
-        for (String arg : args) {
-            sj.add(arg);
-        }
-        return sj.toString();
     }
 
     /**
