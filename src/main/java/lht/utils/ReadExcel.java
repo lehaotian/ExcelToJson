@@ -21,11 +21,11 @@ public class ReadExcel {
     /**
      * 当前表名
      */
-    public static String metaName;
+    private static String metaName;
     /**
      * 公式计算
      */
-    public static FormulaEvaluator formulaEvaluator;
+    private static FormulaEvaluator formulaEvaluator;
 
     /**
      * 读取file目录下所有的excel表

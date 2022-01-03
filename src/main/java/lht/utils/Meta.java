@@ -15,6 +15,10 @@ public class Meta {
      */
     public String metaName;
     /**
+     * 包路径
+     */
+    public String packageLink;
+    /**
      * 表类型
      */
     private MetaType metaType;
