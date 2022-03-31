@@ -1,9 +1,9 @@
 package com.lht.tool.eg;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.lht.tool.util.JsonUtil;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -21,10 +21,9 @@ public record ExcelBean(
     public static Map<String, ExcelBean> dataMap = new LinkedHashMap<>();
 
     public static void init() {
-        Gson gson = new Gson();
         JsonArray jsonArray = JsonParser.parseString("ExcelBean").getAsJsonArray();
         for (JsonElement jsonElement : jsonArray) {
-            ExcelBean excelBean = gson.fromJson(jsonElement, ExcelBean.class);
+            ExcelBean excelBean = JsonUtil.toObject(jsonElement, ExcelBean.class);
             dataMap.put(byKey(excelBean.id), excelBean);
         }
     }

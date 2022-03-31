@@ -1,3 +1,0 @@
-inputPath: D:\egret\ArcherSurvive\Excel
-clientOutputPath: D:\egret\ArcherSurvive\Excel\Json
-serverOutputPath: D:\egret\ArcherSurvive\Excel\Json2
