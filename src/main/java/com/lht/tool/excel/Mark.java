@@ -7,10 +7,10 @@ package com.lht.tool.excel;
 public class Mark {
     public static String temporary = "~$";
     public static String point = "\\.";
-    public static String underline = "_";
+    public static String line = "-";
     public static String empty = "";
     public static String xlsx = "xlsx";
-    public static String xls = "xls";
     public static String open = "*";
-    public static String flag = "字段名";
+    public static String flag = "config";
+    public static String json = ".json";
 }

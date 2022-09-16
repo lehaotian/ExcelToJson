@@ -19,7 +19,7 @@ public class Field {
     /**
      * 数据类型
      */
-    private String dataType;
+    private FieldType dataType;
     /**
      * 导出类型
      */

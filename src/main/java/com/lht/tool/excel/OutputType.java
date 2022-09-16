@@ -8,6 +8,10 @@ package com.lht.tool.excel;
  */
 public enum OutputType {
     /**
+     * 主键
+     */
+    PK,
+    /**
      * 全部
      */
     CS,
@@ -19,12 +23,16 @@ public enum OutputType {
      * 服务器
      */
     S,
-    /**
-     * 主键
-     */
-    PK;
+    ;
 
     public static OutputType of(String value) {
         return OutputType.valueOf(value.toUpperCase());
+    }
+
+    public boolean outputAble(OutputType outputType) {
+        if (this == CS || this == PK) {
+            return true;
+        }
+        return this == outputType;
     }
 }

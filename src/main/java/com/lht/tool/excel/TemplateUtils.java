@@ -1,66 +1,56 @@
 package com.lht.tool.excel;
 
 import freemarker.template.Configuration;
-import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.Template;
-import freemarker.template.Version;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateExceptionHandler;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.Locale;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Map;
 
 /**
+ * 模板工具
+ *
  * @author 乐浩天
  * @date 2021/12/29 23:51
  */
 public class TemplateUtils {
+    private static final Configuration CFG = new Configuration(Configuration.VERSION_2_3_22);
+
+    static {
+        try {
+            CFG.setDirectoryForTemplateLoading(new File("/ftl"));
+            CFG.setDefaultEncoding("UTF-8");
+            CFG.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        } catch (IOException e) {
+            throw new RuntimeException("模板路径错误");
+        }
+    }
+
     /**
-     * 创建Freemaker模版
+     * 创建freemarker模版
      *
-     * @param tmplDirPath
-     * @param tmplFileName
+     * @param fileName 模板名
      * @return 模版
      */
-    public static Template createTemplate(String tmplDirPath, String tmplFileName) {
+    public static Template createTemplate(String fileName) {
         try {
-            Version version = Configuration.VERSION_2_3_0;
-            Configuration cfg = new Configuration(version);
-            //模板目录
-            cfg.setDirectoryForTemplateLoading(new File(tmplDirPath));
-            //设置对象包装器
-            cfg.setObjectWrapper(new DefaultObjectWrapperBuilder(version).build());
-            cfg.setEncoding(Locale.getDefault(), "UTF-8");
-            //使用的模板
-            Template temp = cfg.getTemplate(tmplFileName);
-            return temp;
-        } catch (Exception e) {
-            return null;
+            return CFG.getTemplate(fileName);
+        } catch (IOException e) {
+            throw new RuntimeException("没有模板" + fileName);
         }
     }
 
     /**
      * 生成模板文件
-     *
-     * @param filePath
-     * @param temp
-     * @param root
-     * @throws Exception
      */
-    public static void writeTmplFile(String filePath, Template temp, Map<String, Object> root) throws Exception {
-        //生成文件
-        File file = new File(filePath);
-        if (!file.exists()) {
-            file.createNewFile();
+    public static void writeTmplFile(Template temp, String filePath, Map<String, Object> root) {
+        try (PrintWriter pw = new PrintWriter(filePath)) {
+            temp.process(root, pw);
+        } catch (TemplateException | IOException e) {
+            throw new RuntimeException("生成模板失败" + filePath);
         }
-        //写文件
-        FileOutputStream writerStream = new FileOutputStream(file);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(writerStream, StandardCharsets.UTF_8));
-        temp.process(root, writer);
-        writer.flush();
-        writer.close();
     }
 }

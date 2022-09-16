@@ -1,7 +1,9 @@
 package com.lht.tool.excel;
 
 import lombok.Data;
+import org.apache.poi.ss.usermodel.Sheet;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,21 +15,29 @@ public class Meta {
     /**
      * 表名
      */
-    public String metaName;
+    private String metaName;
+    /**
+     * excel表
+     */
+    private Sheet sheet;
     /**
      * 包路径
      */
-    public String packageLink;
+    private String packageLink;
     /**
      * 表类型
      */
     private MetaType metaType;
     /**
+     * 导出类型
+     */
+    private OutputType outputType;
+    /**
      * 字段列表
      */
-    private List<Field> fields;
+    private List<Field> fields = new ArrayList<>();
     /**
      * 数据
      */
-    private String[][] data;
+    private List<List<String>> data = new ArrayList<>();
 }
