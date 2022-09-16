@@ -43,7 +43,7 @@ public class WriteFileUtils {
         try {
             file.createNewFile();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("创建文件" + filePath + "失败");
         }
         try (PrintWriter pw = new PrintWriter(filePath)) {
             List<Map<String, String>> data = genJsonData(meta, outputType);
