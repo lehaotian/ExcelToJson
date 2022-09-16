@@ -21,10 +21,6 @@ public class Meta {
      */
     private Sheet sheet;
     /**
-     * 包路径
-     */
-    private String packageLink;
-    /**
      * 表类型
      */
     private MetaType metaType;

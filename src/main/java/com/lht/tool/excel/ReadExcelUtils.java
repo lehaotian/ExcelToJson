@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 /**
  * 读文件工具
@@ -57,22 +58,23 @@ public class ReadExcelUtils {
             String excelName = StringUtil.capitalize(name.split(Mark.line)[1]);
             try (Workbook workbook = new XSSFWorkbook(file)) {
                 formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
-                workbook.forEach(sheet -> {
-                    String sheetName = sheet.getSheetName();
-                    //过滤文件名不含-的sheet
-                    if (!sheetName.contains(Mark.line)) {
-                        return;
-                    }
-                    Meta meta = new Meta();
-                    meta.setSheet(sheet);
-                    metaName = excelName + StringUtil.capitalize(sheetName.split(Mark.line)[1]);
-                    meta.setMetaName(metaName);
-                    Cell first = sheet.getRow(0).getCell(0);
-                    MetaType type = MetaType.getType(readCell(first));
-                    meta.setMetaType(type);
-                    type.genMeta(meta);
-                    metaList.add(meta);
-                });
+                StreamSupport.stream(workbook.spliterator(), true)
+                        .forEach(sheet -> {
+                            String sheetName = sheet.getSheetName();
+                            //过滤文件名不含-的sheet
+                            if (!sheetName.contains(Mark.line)) {
+                                return;
+                            }
+                            Meta meta = new Meta();
+                            meta.setSheet(sheet);
+                            metaName = excelName + StringUtil.capitalize(sheetName.split(Mark.line)[1]);
+                            meta.setMetaName(metaName);
+                            Cell first = sheet.getRow(0).getCell(0);
+                            MetaType type = MetaType.getType(readCell(first));
+                            meta.setMetaType(type);
+                            type.genMeta(meta);
+                            metaList.add(meta);
+                        });
             } catch (Exception e) {
                 System.out.println(file.getName() + "导出失败！" + e);
             }
@@ -124,10 +126,38 @@ public class ReadExcelUtils {
                 meta.getData().get(k).add(data);
             }
         }
+        genMetaOutputType(meta);
+    }
+
+    private static void genMetaOutputType(Meta meta) {
+        for (Field field : meta.getFields()) {
+            if (field.getOutputType() == OutputType.CS) {
+                meta.setOutputType(OutputType.CS);
+                break;
+            }
+        }
+        meta.setOutputType(OutputType.CS);
     }
 
     public static void genVertical(Meta meta) {
-
+        Sheet sheet = meta.getSheet();
+        List<String> data = new ArrayList<>();
+        for (int j = 1; j <= sheet.getLastRowNum(); j++) {
+            if (!Objects.equals(Mark.open, readCell(sheet.getRow(j).getCell(0)))) {
+                continue;
+            }
+            Field field = new Field();
+            field.setName(readCell(sheet.getRow(j).getCell(1)));
+            field.setDescribe(readCell(sheet.getRow(j).getCell(2)));
+            String typeStr = readCell(sheet.getRow(j).getCell(3));
+            field.setDataType(FieldType.getType(typeStr));
+            field.setOutputType(OutputType.of(readCell(sheet.getRow(j).getCell(4))));
+            field.setDefaultValue(readCell(sheet.getRow(j).getCell(5)));
+            meta.getFields().add(field);
+            data.add(readCell(sheet.getRow(j).getCell(6)));
+        }
+        meta.getData().add(data);
+        genMetaOutputType(meta);
     }
 
     /**

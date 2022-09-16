@@ -28,15 +28,28 @@ public class WriteFileUtils {
                 continue;
             }
             writeFile(filePath, meta, outputType);
-            System.out.println("导出" + meta + outputType.name() + "端完成！");
+            System.out.println("导出" + meta.getMetaName() + outputType.name() + "端完成！");
         }
     }
 
     private static void writeFile(String filePath, Meta meta, OutputType outputType) {
+        File file = new File(filePath);
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        if (file.exists()) {
+            file.delete();
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         try (PrintWriter pw = new PrintWriter(filePath)) {
             List<Map<String, String>> data = genJsonData(meta, outputType);
             // 文件路径
-            JsonUtil.writerJson(data, pw);
+            String json = JsonUtil.toJson(data);
+            pw.write(json);
         } catch (IOException e) {
             System.out.println(meta.getMetaName() + e.getMessage());
         }

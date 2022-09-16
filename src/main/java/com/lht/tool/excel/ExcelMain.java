@@ -10,9 +10,9 @@ public class ExcelMain {
         Command command = new Command();
         JCommander.newBuilder().args(args).addObject(command).build();
         ReadExcelUtils.readFile(command.getInput());
+        command.getServerOutput().mkdirs();
+        command.getClientOutput().mkdirs();
         WriteFileUtils.writeFile(command.getServerOutput(), ReadExcelUtils.metaList, OutputType.C);
         WriteFileUtils.writeFile(command.getClientOutput(), ReadExcelUtils.metaList, OutputType.S);
     }
-
-
 }
