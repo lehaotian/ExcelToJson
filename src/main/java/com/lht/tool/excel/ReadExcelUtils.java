@@ -56,8 +56,8 @@ public class ReadExcelUtils {
     }
 
     private static Stream<Meta> readExcel(File excel) {
-        //首字母大写
-        String excelName = StringUtil.capitalize(excel.getName().split(Mark.line)[1]);
+        //获取文件英文部分并首字母大写
+        String excelName = StringUtil.capitalize(excel.getName().split(Mark.line)[1].split(Mark.point)[0]);
         try (Workbook workbook = new XSSFWorkbook(excel)) {
             return StreamSupport.stream(workbook.spliterator(), true)
                     //过滤没有包含-的表
