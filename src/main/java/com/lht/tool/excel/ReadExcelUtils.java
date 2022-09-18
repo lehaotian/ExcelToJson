@@ -6,9 +6,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
@@ -17,78 +21,67 @@ import java.util.stream.StreamSupport;
  * @author 乐浩天
  */
 public class ReadExcelUtils {
-    /**
-     * 读取的数据
-     */
-    public static List<Meta> metaList = new ArrayList<>();
-    /**
-     * 当前公式计算对象
-     */
-    private static FormulaEvaluator formulaEvaluator;
-    /**
-     * 当前表名
-     */
-    private static String metaName;
 
     /**
      * 读取file目录下所有的excel表
      *
-     * @param file excel表根目录
-     * @throws Exception 异常
+     * @param basePath excel表根目录
      */
-    public static void readFile(File file) throws Exception {
-        if (file.isFile()) {
-            //过滤临时文件
-            if (file.getName().startsWith(Mark.temporary)) {
-                return;
-            }
-            String[] fileName = file.getName().split(Mark.point);
-            String name = fileName[0];
-            //过滤文件名不含-的excel
-            if (!name.contains(Mark.line)) {
-                System.out.println(file.getName() + "不包含‘-’");
-                return;
-            }
-            //过滤非excel文件
-            String suffix = fileName[1];
-            if (!Objects.equals(XSSFWorkbookType.XLSX.getExtension(), suffix)) {
-                System.out.println(file.getName() + "不是xlsx文件");
-                return;
-            }
-            String excelName = StringUtil.capitalize(name.split(Mark.line)[1]);
-            try (Workbook workbook = new XSSFWorkbook(file)) {
-                formulaEvaluator = workbook.getCreationHelper().createFormulaEvaluator();
-                StreamSupport.stream(workbook.spliterator(), true)
-                        .forEach(sheet -> {
-                            String sheetName = sheet.getSheetName();
-                            //过滤文件名不含-的sheet
-                            if (!sheetName.contains(Mark.line)) {
-                                return;
-                            }
-                            Meta meta = new Meta();
-                            meta.setSheet(sheet);
-                            metaName = excelName + StringUtil.capitalize(sheetName.split(Mark.line)[1]);
-                            meta.setMetaName(metaName);
-                            Cell first = sheet.getRow(0).getCell(0);
-                            MetaType type = MetaType.getType(readCell(first));
-                            meta.setMetaType(type);
-                            type.genMeta(meta);
-                            metaList.add(meta);
-                        });
-            } catch (Exception e) {
-                System.out.println(file.getName() + "导出失败！" + e);
-            }
-        } else if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files == null) {
-                return;
-            }
-            for (File sonFile : files) {
-                readFile(sonFile);
-            }
+    public static List<Meta> readFile(Path basePath) {
+        //获取basePath下需要导出的excel的文件树
+        try (Stream<Path> pathStream = Files.find(
+                basePath,
+                Integer.MAX_VALUE,
+                (path, basicFileAttributes) -> filterFile(path.getFileName().toString())
+        )) {
+            //并发解析excel
+            return pathStream.parallel()
+                    .flatMap((path) -> readExcel(path.toFile()))
+                    .toList();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
+    /**
+     * 过滤不符合规范的文件
+     */
+    private static boolean filterFile(String fileName) {
+        //过滤临时文件
+        return !fileName.startsWith(Mark.temporary)
+                //过滤不是xlsx的文件
+                && fileName.endsWith(XSSFWorkbookType.XLSX.getExtension())
+                //过滤没有包含-的文件
+                && !fileName.contains(Mark.point);
+    }
+
+    private static Stream<Meta> readExcel(File excel) {
+        //首字母大写
+        String excelName = StringUtil.capitalize(excel.getName().split(Mark.line)[1]);
+        try (Workbook workbook = new XSSFWorkbook(excel)) {
+            return StreamSupport.stream(workbook.spliterator(), true)
+                    //过滤没有包含-的表
+                    .filter(sheet -> sheet.getSheetName().contains(Mark.line))
+                    //创建表对应的Meta
+                    .map(sheet -> createMeta(sheet, excelName));
+        } catch (Exception e) {
+            throw new RuntimeException(excelName + "导出失败！" + e);
+        }
+    }
+
+    private static Meta createMeta(Sheet sheet, String excelName) {
+        Meta meta = new Meta();
+        meta.setMetaName(excelName + StringUtil.capitalize(sheet.getSheetName().split(Mark.line)[1]));
+        meta.setSheet(sheet);
+        meta.setMetaType(MetaType.getType(sheet));
+        meta.getMetaType().genMeta(meta);
+        meta.setOutputType(genMetaOutput(meta));
+        return meta;
+    }
+
+    /**
+     * 生成横表数据
+     */
     public static void genHorizontal(Meta meta) {
         Sheet sheet = meta.getSheet();
         Row firstRow = sheet.getRow(0);
@@ -113,7 +106,7 @@ public class ReadExcelUtils {
             field.setDataType(FieldType.getType(typeStr));
             field.setOutputType(OutputType.of(readCell(sheet.getRow(4).getCell(i))));
             if (field.getOutputType() == OutputType.PK && field.getDataType() != FieldType.INT) {
-                throw new RuntimeException(metaName + "主键" + field.getName() + "不是int");
+                throw new RuntimeException(meta.getMetaName() + "主键" + field.getName() + "不是int");
             }
             field.setDefaultValue(readCell(sheet.getRow(5).getCell(i)));
             meta.getFields().add(field);
@@ -126,19 +119,11 @@ public class ReadExcelUtils {
                 meta.getData().get(k).add(data);
             }
         }
-        genMetaOutputType(meta);
     }
 
-    private static void genMetaOutputType(Meta meta) {
-        for (Field field : meta.getFields()) {
-            if (field.getOutputType() == OutputType.CS) {
-                meta.setOutputType(OutputType.CS);
-                break;
-            }
-        }
-        meta.setOutputType(OutputType.CS);
-    }
-
+    /**
+     * 生成竖表数据
+     */
     public static void genVertical(Meta meta) {
         Sheet sheet = meta.getSheet();
         List<String> data = new ArrayList<>();
@@ -152,18 +137,29 @@ public class ReadExcelUtils {
             String typeStr = readCell(sheet.getRow(j).getCell(3));
             field.setDataType(FieldType.getType(typeStr));
             field.setOutputType(OutputType.of(readCell(sheet.getRow(j).getCell(4))));
-            field.setDefaultValue(readCell(sheet.getRow(j).getCell(5)));
             meta.getFields().add(field);
-            data.add(readCell(sheet.getRow(j).getCell(6)));
+            data.add(readCell(sheet.getRow(j).getCell(5)));
         }
         meta.getData().add(data);
-        genMetaOutputType(meta);
+    }
+
+    /**
+     * 生成表的导出类型
+     */
+    private static OutputType genMetaOutput(Meta meta) {
+        for (Field field : meta.getFields()) {
+            if (field.getOutputType() == OutputType.CS) {
+                meta.setOutputType(OutputType.CS);
+                break;
+            }
+        }
+        return OutputType.CS;
     }
 
     /**
      * 读取单元格数据
      */
-    private static String readCell(Cell cell) {
+    public static String readCell(Cell cell) {
         if (cell == null) {
             return Mark.empty;
         }
@@ -180,13 +176,16 @@ public class ReadExcelUtils {
                 boolean booleanCellValue = cell.getBooleanCellValue();
                 return String.valueOf(booleanCellValue);
             case FORMULA:
+                FormulaEvaluator formulaEvaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
                 //公式
                 return readCell(formulaEvaluator.evaluateInCell(cell));
             case _NONE:
             case BLANK:
                 return Mark.empty;
             default:
-                throw new RuntimeException(metaName + cell.getAddress().toString() + "数据错误");
+                String sheetName = cell.getSheet().getSheetName();
+                cell.getSheet().getWorkbook().createName();
+                throw new RuntimeException(sheetName + cell.getAddress().toString() + "数据错误");
         }
     }
 }

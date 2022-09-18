@@ -25,10 +25,6 @@ public class Meta {
      */
     private MetaType metaType;
     /**
-     * 导出类型
-     */
-    private OutputType outputType;
-    /**
      * 字段列表
      */
     private List<Field> fields = new ArrayList<>();
@@ -36,4 +32,8 @@ public class Meta {
      * 数据
      */
     private List<List<String>> data = new ArrayList<>();
+    /**
+     * 导出类型
+     */
+    private OutputType outputType;
 }

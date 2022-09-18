@@ -1,5 +1,8 @@
 package com.lht.tool.excel;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
+
 import java.util.function.Consumer;
 
 /**
@@ -25,7 +28,9 @@ public enum MetaType {
         this.consumer = consumer;
     }
 
-    public static MetaType getType(String flag) {
+    public static MetaType getType(Sheet sheet) {
+        Cell firstCell = sheet.getRow(0).getCell(0);
+        String flag = ReadExcelUtils.readCell(firstCell);
         if (Mark.flag.equals(flag.trim().toLowerCase())) {
             return VERTICAL;
         } else {

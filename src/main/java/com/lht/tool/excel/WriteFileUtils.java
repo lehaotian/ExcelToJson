@@ -20,16 +20,13 @@ public class WriteFileUtils {
     /**
      * 写文件
      */
-    public static void writeFile(File output, List<Meta> metaList, OutputType outputType) {
-        for (Meta meta : metaList) {
-            String filePath = output.getPath() + File.separator + meta.getMetaName() + Mark.json;
-            if (!meta.getOutputType().outputAble(outputType)) {
-                System.out.println(meta + outputType.name() + "没有导出数据");
-                continue;
-            }
-            writeFile(filePath, meta, outputType);
-            System.out.println("导出" + meta.getMetaName() + outputType.name() + "端完成！");
-        }
+    public static void writeFile(File output, List<Meta> metaStream, OutputType outputType) {
+        metaStream.parallelStream().filter(meta -> meta.getOutputType().outputAble(outputType))
+                .forEach(meta -> {
+                    String filePath = output.getPath() + File.separator + meta.getMetaName() + Mark.json;
+                    writeFile(filePath, meta, outputType);
+                    System.out.println(outputType.name() + "端导出" + meta.getMetaName() + "完成！");
+                });
     }
 
     private static void writeFile(String filePath, Meta meta, OutputType outputType) {
