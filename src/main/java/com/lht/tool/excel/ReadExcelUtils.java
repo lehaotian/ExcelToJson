@@ -56,8 +56,8 @@ public class ReadExcelUtils {
     }
 
     private static Stream<Meta> readExcel(File excel) {
-        //获取文件英文部分并首字母大写
-        String excelName = StringUtil.capitalize(excel.getName().split(Mark.line)[1].split(Mark.point)[0]);
+        //获取文件名
+        String excelName = excel.getName().split(Mark.point)[0];
         try (Workbook workbook = new XSSFWorkbook(excel)) {
             return StreamSupport.stream(workbook.spliterator(), true)
                     //过滤没有包含-的表
@@ -71,7 +71,10 @@ public class ReadExcelUtils {
 
     private static Meta createMeta(Sheet sheet, String excelName) {
         Meta meta = new Meta();
-        meta.setMetaName(excelName + StringUtil.capitalize(sheet.getSheetName().split(Mark.line)[1]));
+        String[] excelSplit = excelName.split(Mark.line);
+        String[] sheetSplit = sheet.getSheetName().split(Mark.line);
+        meta.setMetaName(StringUtil.capitalize(excelSplit[1]) + StringUtil.capitalize(sheetSplit[1]));
+        meta.setDescribe(excelSplit[0] + sheetSplit[0]);
         meta.setSheet(sheet);
         meta.setMetaType(MetaType.getType(sheet));
         meta.getMetaType().genMeta(meta);

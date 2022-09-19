@@ -30,18 +30,7 @@ public class WriteFileUtils {
     }
 
     private static void writeFile(String filePath, Meta meta, OutputType outputType) {
-        File file = new File(filePath);
-        if (!file.getParentFile().exists()) {
-            file.getParentFile().mkdirs();
-        }
-        if (file.exists()) {
-            file.delete();
-        }
-        try {
-            file.createNewFile();
-        } catch (IOException e) {
-            throw new RuntimeException("创建文件" + filePath + "失败");
-        }
+        FileUtils.createFile(filePath);
         try (PrintWriter pw = new PrintWriter(filePath)) {
             List<Map<String, String>> data = genJsonData(meta, outputType);
             // 文件路径

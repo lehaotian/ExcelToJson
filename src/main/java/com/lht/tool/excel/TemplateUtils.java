@@ -8,6 +8,7 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +22,7 @@ public class TemplateUtils {
 
     static {
         try {
-            CFG.setDirectoryForTemplateLoading(new File("/ftl"));
+            CFG.setDirectoryForTemplateLoading(new File("F:\\Gitee\\excelToJson\\ftl"));
             CFG.setDefaultEncoding("UTF-8");
             CFG.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
         } catch (IOException e) {
@@ -52,5 +53,22 @@ public class TemplateUtils {
         } catch (TemplateException | IOException e) {
             throw new RuntimeException("生成模板失败" + filePath);
         }
+    }
+
+    /**
+     * 生成模板文件
+     */
+    public static void writeMetaFile(String templateName, String filePath, List<Meta> metaList) {
+        Template template = createTemplate(templateName);
+        for (Meta meta : metaList) {
+            String fileName = filePath + File.separator + Mark.meta + meta.getMetaName() + ".java";
+            FileUtils.createFile(fileName);
+            try (PrintWriter pw = new PrintWriter(fileName)) {
+                template.process(meta, pw);
+            } catch (TemplateException | IOException e) {
+                throw new RuntimeException(meta.getMetaName() + "生成模板失败");
+            }
+        }
+
     }
 }

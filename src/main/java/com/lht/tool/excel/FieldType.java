@@ -17,7 +17,7 @@ public enum FieldType {
     /**
      * 字符串
      */
-    STR("str", String.class),
+    STR("String", String.class),
     /**
      * 布尔值
      */
@@ -35,18 +35,18 @@ public enum FieldType {
      */
     MAP("map", Map.class),
     ;
-    private final String name;
+    private final String typeName;
     private final Class<?> clazz;
 
-    FieldType(String name, Class<?> clazz) {
-        this.name = name;
+    FieldType(String typeName, Class<?> clazz) {
+        this.typeName = typeName;
         this.clazz = clazz;
     }
 
     public static FieldType getType(String name) {
         name = name.trim().toLowerCase();
         for (FieldType value : values()) {
-            if (value.name.equals(name)) {
+            if (value.name().toLowerCase().equals(name)) {
                 return value;
             }
         }
@@ -54,8 +54,8 @@ public enum FieldType {
 //        throw new RuntimeException("没有字段类型" + name);
     }
 
-    public String getName() {
-        return name;
+    public String getTypeName() {
+        return typeName;
     }
 
     public Class<?> getClazz() {

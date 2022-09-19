@@ -13,4 +13,5 @@ public class Mark {
     public static String open = "*";
     public static String flag = "config";
     public static String json = ".json";
+    public static String meta = "Meta";
 }

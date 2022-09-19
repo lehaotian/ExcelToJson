@@ -47,4 +47,23 @@ public class FileUtils {
             System.out.println(e);
         }
     }
+
+    public static void clearDirectory(String path) {
+        clearDirectory(new File(path));
+    }
+
+    public static void createFile(String filePath) {
+        File file = new File(filePath);
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        if (file.exists()) {
+            file.delete();
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException("创建文件" + filePath + "失败");
+        }
+    }
 }
