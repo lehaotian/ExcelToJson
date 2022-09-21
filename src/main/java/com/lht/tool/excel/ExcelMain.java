@@ -1,7 +1,6 @@
 package com.lht.tool.excel;
 
 import com.beust.jcommander.JCommander;
-import com.lht.tool.meta.MetaConfigInfo;
 
 import java.util.List;
 
@@ -35,8 +34,5 @@ public class ExcelMain {
             FileUtils.clearDirectory(command.getServerFileOutput());
             TemplateUtils.writeFile(command.getServerFileOutput(), metaList, OutputType.S);
         }
-
-        MetaConfigInfo.load();
-        int open = MetaConfigInfo.meta().open();
     }
 }
