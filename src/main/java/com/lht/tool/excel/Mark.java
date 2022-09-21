@@ -14,4 +14,7 @@ public class Mark {
     public static String flag = "config";
     public static String json = ".json";
     public static String meta = "Meta";
+    public static String java = ".java";
+    public static String serverMetaFtl = "MetaServer.ftl";
+    public static String serverMetaConfigFtl = "MetaServerConfig.ftl";
 }

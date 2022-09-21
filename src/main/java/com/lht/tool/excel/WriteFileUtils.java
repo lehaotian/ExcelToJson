@@ -33,9 +33,13 @@ public class WriteFileUtils {
         FileUtils.createFile(filePath);
         try (PrintWriter pw = new PrintWriter(filePath)) {
             List<Map<String, String>> data = genJsonData(meta, outputType);
-            // 文件路径
-            String json = JsonUtil.toJson(data);
-            pw.write(json);
+            if (meta.getMetaType() == MetaType.HORIZONTAL) {
+                String json = JsonUtil.toJson(data);
+                pw.write(json);
+            } else {
+                String json = JsonUtil.toJson(data.get(0));
+                pw.write(json);
+            }
         } catch (IOException e) {
             System.out.println(meta.getMetaName() + e.getMessage());
         }

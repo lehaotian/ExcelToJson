@@ -15,8 +15,12 @@ import java.io.File;
 public class Command {
     @Parameter(names = "-i", description = "excel导入路径")
     private File input;
-    @Parameter(names = "-s", description = "服务端导出路径")
-    private File serverOutput;
-    @Parameter(names = "-c", description = "客户端导出路径")
-    private File clientOutput;
+    @Parameter(names = "-sj", description = "服务端json导出路径")
+    private File serverJsonOutput;
+    @Parameter(names = "-cj", description = "客户端json导出路径")
+    private File clientJsonOutput;
+    @Parameter(names = "-sf", description = "服务端meta文件导出路径")
+    private File serverFileOutput;
+    @Parameter(names = "-cf", description = "客户端meta文件导出路径")
+    private File clientFileOutput;
 }

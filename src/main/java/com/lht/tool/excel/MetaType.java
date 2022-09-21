@@ -41,4 +41,16 @@ public enum MetaType {
     public void genMeta(Meta meta) {
         consumer.accept(meta);
     }
+
+    public String getFtl(OutputType outputType) {
+        if (outputType == OutputType.S) {
+            if (this == HORIZONTAL) {
+                return Mark.serverMetaFtl;
+            } else {
+                return Mark.serverMetaConfigFtl;
+            }
+        } else {
+            return "";
+        }
+    }
 }

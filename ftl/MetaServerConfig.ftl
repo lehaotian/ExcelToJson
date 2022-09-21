@@ -25,22 +25,19 @@ public record Meta${metaName}(
         ${field.dataType.typeName} ${field.name} <#if field_has_next>,</#if>
 </#list>
 ) {
-    public static Map<String, Meta${metaName}> dataMap = new LinkedHashMap<>();
+    private static Meta${metaName} meta;
 
     public static void load() {
         try {
             String json = Files.readString(Path.of(ExcelMain.base,"${metaName}.json"));
-            JsonArray jsonArray = JsonParser.parseString(json).getAsJsonArray();
-            for (JsonElement jsonElement : jsonArray) {
-                Meta${metaName} data = JsonUtil.toObject(jsonElement, Meta${metaName}.class);
-                dataMap.put(getKey(data), data);
-            }
+            JsonElement jsonElement = JsonParser.parseString(json);
+            meta = JsonUtil.toObject(jsonElement, Meta${metaName}.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static String getKey(Meta${metaName} meta) {
-        return "";
+    public static Meta${metaName} meta() {
+        return meta;
     }
 }

@@ -31,12 +31,12 @@ public class TemplateUtils {
     }
 
     /**
-     * 创建freemarker模版
+     * 获取freemarker模版
      *
      * @param fileName 模板名
      * @return 模版
      */
-    public static Template createTemplate(String fileName) {
+    public static Template getTemplate(String fileName) {
         try {
             return CFG.getTemplate(fileName);
         } catch (IOException e) {
@@ -58,12 +58,13 @@ public class TemplateUtils {
     /**
      * 生成模板文件
      */
-    public static void writeMetaFile(String templateName, String filePath, List<Meta> metaList) {
-        Template template = createTemplate(templateName);
+    public static void writeFile(File file, List<Meta> metaList, OutputType outputType) {
         for (Meta meta : metaList) {
-            String fileName = filePath + File.separator + Mark.meta + meta.getMetaName() + ".java";
+            String fileName = file.getPath() + File.separator + Mark.meta + meta.getMetaName() + Mark.java;
             FileUtils.createFile(fileName);
             try (PrintWriter pw = new PrintWriter(fileName)) {
+                String ftl = meta.getMetaType().getFtl(outputType);
+                Template template = getTemplate(ftl);
                 template.process(meta, pw);
             } catch (TemplateException | IOException e) {
                 throw new RuntimeException(meta.getMetaName() + "生成模板失败");
