@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,17 +28,12 @@ public class ReadExcelUtils {
      *
      * @param basePath excel表根目录
      */
-    public static List<Meta> readFile(Path basePath) {
+    public static Stream<Meta> readFile(Path basePath) {
         //获取basePath下需要导出的excel的文件树
-        try (Stream<Path> pathStream = Files.find(
-                basePath,
-                Integer.MAX_VALUE,
-                (path, basicFileAttributes) -> filterFile(path.getFileName().toString())
-        )) {
-            //并发解析excel
+        try (Stream<Path> pathStream = Files.find(basePath, Integer.MAX_VALUE, ReadExcelUtils::filterFile)) {
+            //解析excel
             return pathStream.parallel()
-                    .flatMap((path) -> readExcel(path.toFile()))
-                    .toList();
+                    .flatMap(ReadExcelUtils::readExcel);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -46,7 +42,8 @@ public class ReadExcelUtils {
     /**
      * 过滤不符合规范的文件
      */
-    private static boolean filterFile(String fileName) {
+    private static boolean filterFile(Path path, BasicFileAttributes attributes) {
+        String fileName = path.getFileName().toString();
         //过滤临时文件
         return !fileName.startsWith(Mark.temporary)
                 //过滤不是xlsx的文件
@@ -55,10 +52,11 @@ public class ReadExcelUtils {
                 && !fileName.contains(Mark.point);
     }
 
-    private static Stream<Meta> readExcel(File excel) {
+    private static Stream<Meta> readExcel(Path path) {
+        File file = path.toFile();
         //获取文件名
-        String excelName = excel.getName().split(Mark.point)[0];
-        try (Workbook workbook = new XSSFWorkbook(excel)) {
+        String excelName = file.getName().split(Mark.point)[0];
+        try (Workbook workbook = new XSSFWorkbook(file)) {
             return StreamSupport.stream(workbook.spliterator(), true)
                     //过滤没有包含-的表
                     .filter(sheet -> sheet.getSheetName().contains(Mark.line))
@@ -167,28 +165,33 @@ public class ReadExcelUtils {
             return Mark.empty;
         }
         switch (cell.getCellType()) {
-            case STRING:
+            case STRING -> {
                 //字符串类型
                 return cell.getStringCellValue().trim();
-            case NUMERIC:
+            }
+            case NUMERIC -> {
                 //数值类型
                 int num = (int) cell.getNumericCellValue();
                 return String.valueOf(num);
-            case BOOLEAN:
+            }
+            case BOOLEAN -> {
                 //布尔类型
                 boolean booleanCellValue = cell.getBooleanCellValue();
                 return String.valueOf(booleanCellValue);
-            case FORMULA:
+            }
+            case FORMULA -> {
                 FormulaEvaluator formulaEvaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
                 //公式
                 return readCell(formulaEvaluator.evaluateInCell(cell));
-            case _NONE:
-            case BLANK:
+            }
+            case _NONE, BLANK -> {
                 return Mark.empty;
-            default:
+            }
+            default -> {
                 String sheetName = cell.getSheet().getSheetName();
                 cell.getSheet().getWorkbook().createName();
                 throw new RuntimeException(sheetName + cell.getAddress().toString() + "数据错误");
+            }
         }
     }
 }

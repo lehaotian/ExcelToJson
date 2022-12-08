@@ -1,38 +1,38 @@
 package com.lht.tool.excel;
 
-import com.beust.jcommander.JCommander;
+import com.lht.tool.util.TemplateUtils;
+import com.lht.tool.util.WriteFileUtils;
+import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
 
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * @author lht
  */
 public class ExcelMain {
 
-    public static String base;
-
+    @SneakyThrows
     public static void main(String[] args) {
-        //初始化args命令
-        Command command = new Command();
-        JCommander.newBuilder().args(args).addObject(command).build();
-        base = command.getServerJsonOutput().getPath();
-
+        if (args[0] == null) {
+            throw new RuntimeException("未指定json配置文件路径");
+        }
+        String json = Files.readString(Paths.get(args[0]));
+        //读取配置
+        Config.init(json);
+        //载入模板
+        TemplateUtils.init(Config.inPath);
+        //清理导出目录
+        FileUtils.cleanDirectory(Config.serverJsonOutPath.toFile());
+        FileUtils.cleanDirectory(Config.clientJsonOutPath.toFile());
+        FileUtils.cleanDirectory(Config.serverCodeOutPath.toFile());
+        FileUtils.cleanDirectory(Config.clientCodeOutPath.toFile());
         //解析excel为Meta
-        List<Meta> metaList = ReadExcelUtils.readFile(command.getInput().toPath());
-        //前端导出meta为json
-        if (command.getClientJsonOutput() != null) {
-            FileUtils.clearDirectory(command.getServerJsonOutput());
-            WriteFileUtils.writeFile(command.getServerJsonOutput(), metaList, OutputType.C);
-        }
-        //后端导出meta为json
-        if (command.getServerJsonOutput() != null) {
-            FileUtils.clearDirectory(command.getClientJsonOutput());
-            WriteFileUtils.writeFile(command.getClientJsonOutput(), metaList, OutputType.S);
-        }
-        //后端导出meta文件
-        if (command.getClientFileOutput() != null) {
-            FileUtils.clearDirectory(command.getServerFileOutput());
-            TemplateUtils.writeFile(command.getServerFileOutput(), metaList, OutputType.S);
-        }
+        ReadExcelUtils.readFile(Config.ftlPath)
+                //导出json文件
+                .peek(WriteFileUtils.writeJsonFile)
+                //导出模板生成文件
+                .forEach(TemplateUtils.writeFile);
     }
 }

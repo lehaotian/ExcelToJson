@@ -29,7 +29,7 @@ public enum OutputType {
         return OutputType.valueOf(value.toUpperCase());
     }
 
-    public boolean outputAble(OutputType outputType) {
+    public boolean able(OutputType outputType) {
         if (this == CS || this == PK) {
             return true;
         }

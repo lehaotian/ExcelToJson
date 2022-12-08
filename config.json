@@ -1,0 +1,8 @@
+{
+  "inPath": "F:\\Gitee\\excelToJson\\excel",
+  "ftlPath": "F:\\Gitee\\excelToJson\\ftl",
+  "serverJsonOutPath": "F:\\Gitee\\excelToJson\\output\\serverJson",
+  "clientJsonOutPath": "F:\\Gitee\\excelToJson\\output\\clientJson",
+  "serverCodeOutPath": "F:\\Gitee\\excelToJson\\src\\main\\java\\com\\lht\\tool\\model",
+  "clientCodeOutPath": ""
+}
