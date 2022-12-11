@@ -5,9 +5,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -16,61 +13,48 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.lht.tool.excel.Mark.*;
+
 /**
  * 读文件工具
  *
  * @author 乐浩天
  */
 public class ReadExcelUtils {
-
     /**
-     * 读取file目录下所有的excel表
-     *
-     * @param basePath excel表根目录
+     * 过滤非excel文件
      */
-    public static Stream<Meta> readFile(Path basePath) {
-        //获取basePath下需要导出的excel的文件树
-        try (Stream<Path> pathStream = Files.find(basePath, Integer.MAX_VALUE, ReadExcelUtils::filterFile)) {
-            //解析excel
-            return pathStream.parallel()
-                    .flatMap(ReadExcelUtils::readExcel);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public static boolean filterFile(Path path, BasicFileAttributes attributes) {
+        if (attributes.isDirectory() || attributes.isSymbolicLink()) {
+            return false;
         }
-    }
-
-    /**
-     * 过滤不符合规范的文件
-     */
-    private static boolean filterFile(Path path, BasicFileAttributes attributes) {
         String fileName = path.getFileName().toString();
         //过滤临时文件
-        return !fileName.startsWith(Mark.temporary)
+        return !fileName.startsWith(temporary)
                 //过滤不是xlsx的文件
                 && fileName.endsWith(XSSFWorkbookType.XLSX.getExtension())
                 //过滤没有包含-的文件
-                && !fileName.contains(Mark.point);
+                && !fileName.contains(point);
     }
 
-    private static Stream<Meta> readExcel(Path path) {
-        File file = path.toFile();
-        //获取文件名
-        String excelName = file.getName().split(Mark.point)[0];
-        try (Workbook workbook = new XSSFWorkbook(file)) {
+    public static Stream<Meta> readExcel(Path path) {
+        try (Workbook workbook = new XSSFWorkbook(path.toFile())) {
+            //获取文件名
+            String excelName = path.getFileName().toString().split(point)[0];
             return StreamSupport.stream(workbook.spliterator(), true)
                     //过滤没有包含-的表
-                    .filter(sheet -> sheet.getSheetName().contains(Mark.line))
+                    .filter(sheet -> sheet.getSheetName().contains(line))
                     //创建表对应的Meta
                     .map(sheet -> createMeta(sheet, excelName));
         } catch (Exception e) {
-            throw new RuntimeException(excelName + "导出失败！" + e);
+            throw new RuntimeException(path.getFileName().toString() + "导出失败！" + e);
         }
     }
 
     private static Meta createMeta(Sheet sheet, String excelName) {
         Meta meta = new Meta();
-        String[] excelSplit = excelName.split(Mark.line);
-        String[] sheetSplit = sheet.getSheetName().split(Mark.line);
+        String[] excelSplit = excelName.split(line);
+        String[] sheetSplit = sheet.getSheetName().split(line);
         meta.setMetaName(StringUtil.capitalize(excelSplit[1]) + StringUtil.capitalize(sheetSplit[1]));
         meta.setDescribe(excelSplit[0] + sheetSplit[0]);
         meta.setSheet(sheet);
@@ -89,7 +73,7 @@ public class ReadExcelUtils {
         List<Integer> indexList = new ArrayList<>(sheet.getLastRowNum());
         for (int j = 6; j <= sheet.getLastRowNum(); j++) {
             Cell firstCell = sheet.getRow(j).getCell(0);
-            if (!Objects.equals(Mark.open, readCell(firstCell))) {
+            if (!Objects.equals(open, readCell(firstCell))) {
                 continue;
             }
             indexList.add(j);
@@ -97,7 +81,7 @@ public class ReadExcelUtils {
             meta.getData().add(data);
         }
         for (int i = 0; i < firstRow.getLastCellNum(); i++) {
-            if (!Objects.equals(Mark.open, readCell(firstRow.getCell(i)))) {
+            if (!Objects.equals(open, readCell(firstRow.getCell(i)))) {
                 continue;
             }
             Field field = new Field();
@@ -129,7 +113,7 @@ public class ReadExcelUtils {
         Sheet sheet = meta.getSheet();
         List<String> data = new ArrayList<>();
         for (int j = 1; j <= sheet.getLastRowNum(); j++) {
-            if (!Objects.equals(Mark.open, readCell(sheet.getRow(j).getCell(0)))) {
+            if (!Objects.equals(open, readCell(sheet.getRow(j).getCell(0)))) {
                 continue;
             }
             Field field = new Field();
@@ -162,7 +146,7 @@ public class ReadExcelUtils {
      */
     public static String readCell(Cell cell) {
         if (cell == null) {
-            return Mark.empty;
+            return empty;
         }
         switch (cell.getCellType()) {
             case STRING -> {
@@ -184,14 +168,10 @@ public class ReadExcelUtils {
                 //公式
                 return readCell(formulaEvaluator.evaluateInCell(cell));
             }
-            case _NONE, BLANK -> {
-                return Mark.empty;
+            case _NONE, BLANK, ERROR -> {
+                return empty;
             }
-            default -> {
-                String sheetName = cell.getSheet().getSheetName();
-                cell.getSheet().getWorkbook().createName();
-                throw new RuntimeException(sheetName + cell.getAddress().toString() + "数据错误");
-            }
+            default -> throw new IllegalStateException("Unexpected value: " + cell.getCellType());
         }
     }
 }

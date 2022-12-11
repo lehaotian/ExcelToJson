@@ -12,7 +12,6 @@ import freemarker.template.TemplateExceptionHandler;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 /**
  * 模板工具
@@ -50,8 +49,8 @@ public class TemplateUtils {
     /**
      * 根据模板生成文件
      */
-    public static Consumer<Meta> writeFile = meta -> {
-        Path serverFilePath = Config.serverCodeOutPath.resolve(meta.getMetaName() + Mark.java);
+    public static void writeFile(Meta meta) {
+        Path serverFilePath = Config.serverCodeOutPath.resolve(Mark.meta + meta.getMetaName() + Mark.java);
         try (PrintWriter pw = new PrintWriter(serverFilePath.toFile())) {
             String serverFtl = meta.getMetaType().getFtl(OutputType.S);
             Template serverTemplate = getTemplate(serverFtl);
@@ -59,5 +58,7 @@ public class TemplateUtils {
         } catch (TemplateException | IOException e) {
             throw new RuntimeException(meta.getMetaName() + "生成模板失败");
         }
-    };
+    }
+
+    ;
 }

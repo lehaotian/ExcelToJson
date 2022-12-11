@@ -1,11 +1,10 @@
-package ${packageLink};
+package com.lht.tool.model;
 
 import com.lht.tool.eg.Meta;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.lht.tool.util.JsonUtil;
-import com.lht.tool.excel.ExcelMain;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,9 +26,9 @@ public record Meta${metaName}(
 ) {
     private static Meta${metaName} meta;
 
-    public static void load() {
+    public static void load(Path path) {
         try {
-            String json = Files.readString(Path.of(ExcelMain.base,"${metaName}.json"));
+            String json = Files.readString(path.resolve("${metaName}.json"));
             JsonElement jsonElement = JsonParser.parseString(json);
             meta = JsonUtil.toObject(jsonElement, Meta${metaName}.class);
         } catch (IOException e) {

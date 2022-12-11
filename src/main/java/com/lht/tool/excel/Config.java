@@ -1,6 +1,7 @@
 package com.lht.tool.excel;
 
-import com.lht.tool.util.JsonUtil;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.nio.file.Path;
 
@@ -24,19 +25,26 @@ public class Config {
      */
     public static Path serverJsonOutPath;
     /**
-     * 客户端json导出路径
-     */
-    public static Path clientJsonOutPath;
-    /**
      * 服务端meta文件导出路径
      */
     public static Path serverCodeOutPath;
+    /**
+     * 客户端json导出路径
+     */
+    public static Path clientJsonOutPath;
     /**
      * 客户端meta文件导出路径
      */
     public static Path clientCodeOutPath;
 
+
     public static void init(String json) {
-        Config config = JsonUtil.toObject(json, Config.class);
+        JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+        inPath = Path.of(jsonObject.get("inPath").getAsString());
+        ftlPath = Path.of(jsonObject.get("ftlPath").getAsString());
+        serverJsonOutPath = Path.of(jsonObject.get("serverJsonOutPath").getAsString());
+        serverCodeOutPath = Path.of(jsonObject.get("serverCodeOutPath").getAsString());
+        clientJsonOutPath = Path.of(jsonObject.get("clientJsonOutPath").getAsString());
+        clientCodeOutPath = Path.of(jsonObject.get("clientCodeOutPath").getAsString());
     }
 }

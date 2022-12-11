@@ -8,7 +8,6 @@ import com.lht.tool.excel.OutputType;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Consumer;
 
 /**
  * 写文件工具
@@ -20,7 +19,7 @@ public class WriteFileUtils {
     /**
      * 写文件
      */
-    public static Consumer<Meta> writeJsonFile = meta -> {
+    public static void writeJsonFile(Meta meta) {
         try {
             if (meta.getOutputType().able(OutputType.S)) {
                 Path serverFilePath = Config.serverJsonOutPath.resolve(meta.getMetaName() + Mark.json);
@@ -34,7 +33,7 @@ public class WriteFileUtils {
             System.out.println("导出" + meta.getMetaName() + "失败！ Exception：" + e);
         }
         System.out.println("导出" + meta.getMetaName() + "完成！");
-    };
+    }
 
 
 }

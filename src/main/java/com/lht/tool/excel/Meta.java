@@ -20,10 +20,6 @@ public class Meta {
      */
     private String metaName;
     /**
-     * 包
-     */
-    private String packageLink = "com.lht.tool.meta";
-    /**
      * 表描述
      */
     private String describe;
