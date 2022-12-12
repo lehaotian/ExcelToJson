@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.lht.tool.protobuf;
+option java_multiple_files = true;
+option java_outer_classname = "Hero";
+option java_package = "com.lht.tool.protobuf";
+
+message Hero {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+}
